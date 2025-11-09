@@ -8,7 +8,11 @@ import {
   MenuItem,
   MenuItems,
 } from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  ShoppingCartIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 const user = {
   name: "Tom Cook",
@@ -17,11 +21,8 @@ const user = {
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
 };
 const navigation = [
-  { name: "Dashboard", href: "#", current: true },
+  { name: "NeoCart", href: "#", current: true },
   { name: "Team", href: "#", current: false },
-  { name: "Projects", href: "#", current: false },
-  { name: "Calendar", href: "#", current: false },
-  { name: "Reports", href: "#", current: false },
 ];
 const userNavigation = [
   { name: "Your Profile", href: "#" },
@@ -75,8 +76,11 @@ function Navbar({ children }) {
                 >
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">View notifications</span>
-                  <BellIcon aria-hidden="true" className="size-6" />
+                  <ShoppingCartIcon aria-hidden="true" className="size-6" />
                 </button>
+                <span class="inline-flex mb-7 -ml-3  items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 inset-ring inset-ring-red-400/20">
+                  3
+                </span>
 
                 {/* Profile dropdown */}
                 <Menu as="div" className="relative ml-3">
@@ -169,8 +173,11 @@ function Navbar({ children }) {
               >
                 <span className="absolute -inset-1.5" />
                 <span className="sr-only">View notifications</span>
-                <BellIcon aria-hidden="true" className="size-6" />
+                <ShoppingCartIcon aria-hidden="true" className="size-6" />
               </button>
+              <span class="inline-flex  mb-5 -ml-2 items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 inset-ring inset-ring-red-400/20 ">
+                3
+              </span>
             </div>
             <div className="mt-3 space-y-1 px-2">
               {userNavigation.map((item) => (

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   decrement,
@@ -7,8 +7,15 @@ import {
   incrementAsync,
   incrementIfOdd,
   selectCount,
-} from "./productListSlice";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
+  getAllProducts,
+  fetchAllProductsByFilterAsync,
+  fetchAllProductsAsync,
+} from "../productSlice";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  StarIcon,
+} from "@heroicons/react/20/solid";
 
 import {
   Dialog,
@@ -30,49 +37,50 @@ import {
   PlusIcon,
   Squares2X2Icon,
 } from "@heroicons/react/20/solid";
+import { Link } from "react-router-dom";
 
 const sortOptions = [
-  { name: "Most Popular", href: "#", current: true },
-  { name: "Best Rating", href: "#", current: false },
-  { name: "Newest", href: "#", current: false },
-  { name: "Price: Low to High", href: "#", current: false },
-  { name: "Price: High to Low", href: "#", current: false },
+  { name: "Best Rating", sort: "rating", order: "desc", current: false },
+  { name: "Price: Low to High", sort: "price", order: "asc", current: false },
+  { name: "Price: High to Low", sort: "price", order: "desc", current: false },
 ];
 
 const filters = [
   {
-    id: "color",
-    name: "Color",
+    id: "brand",
+    name: "brand",
     options: [
-      { value: "white", label: "White", checked: false },
-      { value: "beige", label: "Beige", checked: false },
-      { value: "blue", label: "Blue", checked: true },
-      { value: "brown", label: "Brown", checked: false },
-      { value: "green", label: "Green", checked: false },
-      { value: "purple", label: "Purple", checked: false },
+      { value: "annibale-colombo", label: "Annibale Colombo", checked: false },
+      { value: "bath-trends", label: "Bath Trends", checked: false },
+      { value: "calvin-klein", label: "Calvin Klein", checked: false },
+      { value: "chanel", label: "Chanel", checked: false },
+      { value: "chic-cosmetics", label: "Chic Cosmetics", checked: false },
+      { value: "dior", label: "Dior", checked: false },
+      { value: "dolce-gabbana", label: "Dolce & Gabbana", checked: false },
+      { value: "essence", label: "Essence", checked: false },
+      { value: "furniture-co", label: "Furniture Co.", checked: false },
+      { value: "glamour-beauty", label: "Glamour Beauty", checked: false },
+      { value: "gucci", label: "Gucci", checked: false },
+      { value: "knoll", label: "Knoll", checked: false },
+      { value: "nail-couture", label: "Nail Couture", checked: false },
+      {
+        value: "unbranded-generic",
+        label: "Unbranded / Generic",
+        checked: false,
+      },
+      { value: "velvet-touch", label: "Velvet Touch", checked: false },
     ],
   },
   {
     id: "category",
     name: "Category",
     options: [
-      { value: "new-arrivals", label: "New Arrivals", checked: false },
-      { value: "sale", label: "Sale", checked: false },
-      { value: "travel", label: "Travel", checked: true },
-      { value: "organization", label: "Organization", checked: false },
-      { value: "accessories", label: "Accessories", checked: false },
-    ],
-  },
-  {
-    id: "size",
-    name: "Size",
-    options: [
-      { value: "2l", label: "2L", checked: false },
-      { value: "6l", label: "6L", checked: false },
-      { value: "12l", label: "12L", checked: false },
-      { value: "18l", label: "18L", checked: false },
-      { value: "20l", label: "20L", checked: false },
-      { value: "40l", label: "40L", checked: true },
+      { value: "smartphones", label: "smartphones", checked: false },
+      { value: "laptops", label: "laptops", checked: false },
+      { value: "fragrances", label: "fragrances", checked: false },
+      { value: "skincare", label: "skincare", checked: false },
+      { value: "groceries", label: "groceries", checked: false },
+      { value: "home-decoration", label: "home decoration", checked: false },
     ],
   },
 ];
@@ -80,12 +88,12 @@ const filters = [
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
-const products = [
+const OldProducts = [
   {
     id: 1,
     name: "Basic Tee",
     href: "#",
-    imageSrc:
+    thumbnail:
       "https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-01.jpg",
     imageAlt: "Front of men's Basic Tee in black.",
     price: "$35",
@@ -96,7 +104,7 @@ const products = [
     id: 2,
     name: "Basic Tee",
     href: "#",
-    imageSrc:
+    thumbnail:
       "https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-01.jpg",
     imageAlt: "Front of men's Basic Tee in black.",
     price: "$35",
@@ -106,7 +114,7 @@ const products = [
     id: 3,
     name: "Basic Tee",
     href: "#",
-    imageSrc:
+    thumbnail:
       "https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-01.jpg",
     imageAlt: "Front of men's Basic Tee in black.",
     price: "$35",
@@ -116,7 +124,7 @@ const products = [
     id: 4,
     name: "Basic Tee",
     href: "#",
-    imageSrc:
+    thumbnail:
       "https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-01.jpg",
     imageAlt: "Front of men's Basic Tee in black.",
     price: "$35",
@@ -124,14 +132,32 @@ const products = [
   },
   // More products...
 ];
+
+// More products...
 export default function ProductList() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const count = useSelector(selectCount);
+  const products = useSelector(getAllProducts);
+  console.log("coming  from store..." + JSON.stringify(products));
   const dispatch = useDispatch();
-  const [incrementAmount, setIncrementAmount] = useState("2");
+  const [filter, setFilter] = useState({});
+  const handleFilter = (e, section, option) => {
+    console.log(section.id, option.value);
 
-  const incrementValue = Number(incrementAmount) || 0;
+    const newFilter = { ...filter, [section.id]: option.value };
+    setFilter(newFilter);
+    dispatch(fetchAllProductsByFilterAsync(newFilter));
+  };
+  const handleSort = (e, option) => {
+
+    const newFilter = { ...filter, _sort: option.sort, _order:option.order };
+    setFilter(newFilter);
+    dispatch(fetchAllProductsByFilterAsync(newFilter));
+  };
+
+  useEffect(() => {
+    dispatch(fetchAllProductsAsync());
+  }, [dispatch]);
 
   return (
     <div className="bg-white">
@@ -245,7 +271,7 @@ export default function ProductList() {
         </Dialog>
 
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-baseline justify-between border-b border-gray-200 pt-24 pb-6">
+          <div className="flex items-baseline justify-between border-b border-gray-200 pt-5 pb-6">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900">
               All Products
             </h1>
@@ -269,8 +295,8 @@ export default function ProductList() {
                   <div className="py-1">
                     {sortOptions.map((option) => (
                       <MenuItem key={option.name}>
-                        <a
-                          href={option.href}
+                        <p
+                          onClick={(e) => handleSort(e, option)}
                           className={classNames(
                             option.current
                               ? "font-medium text-gray-900"
@@ -279,7 +305,7 @@ export default function ProductList() {
                           )}
                         >
                           {option.name}
-                        </a>
+                        </p>
                       </MenuItem>
                     ))}
                   </div>
@@ -349,6 +375,9 @@ export default function ProductList() {
                                   id={`filter-${section.id}-${optionIdx}`}
                                   name={`${section.id}[]`}
                                   type="checkbox"
+                                  onChange={(e) =>
+                                    handleFilter(e, section, option)
+                                  }
                                   className="col-start-1 row-start-1 appearance-none rounded-sm border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
                                 />
                                 <svg
@@ -392,34 +421,50 @@ export default function ProductList() {
                 {" "}
                 <div className="bg-white">
                   <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-0 lg:max-w-7xl lg:px-8">
-                    <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+                    <div className="mt-6 grid grid-cols-1  gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
                       {products.map((product) => (
-                        <div key={product.id} className="group relative">
-                          <img
-                            alt={product.imageAlt}
-                            src={product.imageSrc}
-                            className="aspect-square w-full rounded-md bg-gray-200 object-cover group-hover:opacity-75 lg:aspect-auto lg:h-80"
-                          />
-                          <div className="mt-4 flex justify-between">
-                            <div>
-                              <h3 className="text-sm text-gray-700">
-                                <a href={product.href}>
-                                  <span
-                                    aria-hidden="true"
-                                    className="absolute inset-0"
-                                  />
-                                  {product.name}
-                                </a>
-                              </h3>
-                              <p className="mt-1 text-sm text-gray-500">
-                                {product.color}
-                              </p>
+                        <Link to="/product-detail">
+                          <div
+                            key={product.id}
+                            className="group relative border-2 p-2"
+                          >
+                            <img
+                              alt={product.imageAlt}
+                              src={product.thumbnail}
+                              className="aspect-square w-full rounded-md bg-gray-200 object-cover group-hover:opacity-75 lg:aspect-auto lg:h-80"
+                            />
+                            <div className="mt-4 flex justify-between">
+                              <div>
+                                <h3 className="text-sm text-gray-700">
+                                  <a href={product.href}>
+                                    <span
+                                      aria-hidden="true"
+                                      className="absolute inset-0"
+                                    />
+                                    {product.title}
+                                  </a>
+                                </h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                  <StarIcon className=" w-6 h-6 inline" />
+                                  <span className=" align-bottom ml-2">
+                                    {product.rating}{" "}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="flex flex-col">
+                                <p className="text-sm font-medium  text-gray-900">
+                                  {Math.round(
+                                    product.price *
+                                      (1 - product.discountPercentage / 100)
+                                  )}
+                                </p>
+                                <p className="text-sm  font-medium line-through  text-gray-500">
+                                  {product.price}
+                                </p>
+                              </div>
                             </div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {product.price}
-                            </p>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
